@@ -1,5 +1,5 @@
 # # # # # # # # # # # # # # # # #
-#	Self-Care Bot 0.3a			#
+#	Self-Care Bot 0.3a		#
 #	Designed by Kelly Maere		#
 #	Programmed by Colin Diener	#
 # # # # # # # # # # # # # # # # #
@@ -11,8 +11,8 @@ TODO:	Update code to reflect new Telegram API 2.0
 """
 
 import telepot
-import time
-import datetime
+from datetime import datetime, time
+from time import sleep
 from random import randint
 import emoji
 # To ask people at the same time
@@ -35,6 +35,7 @@ users = json.loads(parser.get("users","toImport"))
 userreply = []
 meduser = json.loads(parser.get("users","medUsers"))
 
+runToday = False
 # We're good to go!
 print('SCB is up and running, adding users to base...')
 
@@ -155,6 +156,14 @@ def checkup(counter, thisthread):
 	# Bye!
 	bot.sendMessage(userid, bye[randint(0,3)], reply_markup=no)
 
+def setup():
+	parser.read('settings.ini')
+	users = json.loads(parser.get("users","toImport"))
+	userreply = []
+	meduser = json.loads(parser.get("users","medUsers"))
+	for i in users:
+		userreply.append(0)
+	print("User list updated, all set to go.")
 def runme():
 	print('Creating threads, asking questions...')
 	usercount = 0
@@ -163,22 +172,57 @@ def runme():
 		usercount = usercount+1
 		thread.start()
 
+def writeConfig():
+	parser.set('users','toImport', json.dumps(users))
+	parser.set('users','medUsers', json.dumps(meduser))
+	# Now that we've made the modifications, write to file
+	with open('settings.ini','w') as configfile:
+		parser.write(configfile)
+
 def handle(msg):
 	chat_id = msg['chat']['id']
 	command = msg['text']
 
-	userreply[users.index(msg['chat']['id'])] = msg['text']
+	if chat_id in users:
+		if '/broadcast' in msg['text']:
+			bmsg = msg['text']
+			bmsg = bmsg[10:]
+			for i in users:
+				bot.sendMessage(i,bmsg)
+		userreply[users.index(msg['chat']['id'])] = msg['text']
 
-	if '/broadcast' in msg['text']:
-		bmsg = msg['text']
-		bmsg = bmsg[10:]
-		for i in users:
-			bot.sendMessage(i,bmsg)
+	if '/rem' in msg['text']:
+		userreply.pop(users.index(msg['chat']['id']))
+		users.remove(chat_id)
+		# For good measure!
+		meduser.remove(chat_id)
+		writeConfig()
+		print("%s has opted out of the SCB service." % chat_id)
+		bot.sendMessage(chat_id,"Sorry to see you go. I won't contact you any more. Send me /start if you change your mind<3")
+	if '/start' in msg['text']:
+		if chat_id not in users:
+			userreply.append(0)
+			users.append(chat_id)
+			writeConfig()
+			print("%s has opted into the SCB service." % chat_id)
+			bot.sendMessage(chat_id,"Hi! You've been added to my list of people to contact everyday. You can send me /rem if you no longer wish to recieve messages. Send me /med if you wish to be asked about medications each day.")
+	if '/med' in msg['text']:
+		meduser.append(chat_id)
+		writeConfig()
+		bot.sendMessage(chat_id,"I'll ask you if you've taken your meds each day :)")
+
 
 # Listen for commands
 bot.message_loop(handle)
 
 # This loop will run forever
 while True:
-	runme()					# Call the real function
-	time.sleep(86400)		# There are 86400 seconds in 24 hours
+	now = datetime.now()
+	now_time = now.time()
+	if now_time >= time(14,00) and now_time <= time(17,00) and runToday is False:
+		setup()
+		runme()					# Call the real function
+		runToday = True
+	if now_time >= time(20,00) and now_time <= time(23,00):
+		runToday = False
+	sleep(7200)		# There are 7200 seconds in 2 hours
