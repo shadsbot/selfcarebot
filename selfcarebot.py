@@ -102,10 +102,10 @@ def checkup(counter, thisthread):
 	no = {'hide_keyboard': True}
 	yesno = {'keyboard': [['Yes','No']]}
 	drinks= {'keyboard': [['Water','Tea'],['Coffee','Soda','Nothing/Other']]}
-	started = datetime.datetime.now()
+	started = datetime.now()
 	bypass = False
 	def checkKill():
-		delta = datetime.datetime.now() - started
+		delta = datetime.now() - started
 		if delta.total_seconds() > 72000:	# 72000 seconds is 20 hours
 #		if delta.total_seconds() > 10:
 			bypass = True
@@ -117,7 +117,7 @@ def checkup(counter, thisthread):
 
 	bot.sendMessage(userid, greeting[randint(0,3)], reply_markup=yesno)
 	while (userreply[counter] == 0 and bypass == False):
-		time.sleep(delay)
+		sleep(delay)
 		checkKill()
 	if bypass == False:
 		if userreply[counter] == 'Yes':
@@ -129,7 +129,7 @@ def checkup(counter, thisthread):
 		bot.sendMessage(userid, "What have you had to drink?", reply_markup=drinks)
 	
 	while (userreply[counter] == 0 and bypass == False):
-		time.sleep(delay)
+		sleep(delay)
 		checkKill()
 	if bypass == False:
 		if userreply[counter] == 'Water':
@@ -143,7 +143,7 @@ def checkup(counter, thisthread):
 		if userid in meduser:
 			bot.sendMessage(userid, "Are you taking your medications?", reply_markup=yesno)
 			while (userreply[counter] == 0 and bypass == False):
-				time.sleep(delay)
+				sleep(delay)
 				checkKill()
 			if bypass == False:			
 				if userreply[counter] == "Yes":
