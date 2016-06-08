@@ -159,7 +159,7 @@ def checkup(counter, thisthread):
 def setup():
 	parser.read('settings.ini')
 	users = json.loads(parser.get("users","toImport"))
-	userreply = []
+	del userreply[:]
 	meduser = json.loads(parser.get("users","medUsers"))
 	for i in users:
 		userreply.append(0)
